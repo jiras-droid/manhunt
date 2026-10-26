@@ -46,7 +46,7 @@ export async function loadIdentity(): Promise<Identity> {
 
 export async function loadServerUrl(): Promise<string> {
   const saved = await AsyncStorage.getItem(KEYS.serverUrl);
-  return saved || (Constants.expoConfig?.extra?.serverUrl as string) || 'http://192.168.1.100:3000';
+  return saved || (Constants.expoConfig?.extra?.serverUrl as string) || 'https://manhunt-server-r2g1.onrender.com';
 }
 export const saveServerUrl = (url: string) => AsyncStorage.setItem(KEYS.serverUrl, url.trim().replace(/\/+$/, ''));
 
