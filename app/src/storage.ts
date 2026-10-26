@@ -9,7 +9,10 @@ const KEYS = {
   serverUrl: 'manhunt.serverUrl',
   session: 'manhunt.session',
   permissionsAsked: 'manhunt.permissionsAsked',
+  cameraBackground: 'manhunt.cameraBackground',
 };
+
+export const DEFAULT_SERVER_URL = 'https://manhunt-server-r2g1.onrender.com';
 
 // Everything the background location task needs to report without the UI running.
 export type Session = { code: string; serverUrl: string; playerId: string; secret: string };
@@ -46,9 +49,18 @@ export async function loadIdentity(): Promise<Identity> {
 
 export async function loadServerUrl(): Promise<string> {
   const saved = await AsyncStorage.getItem(KEYS.serverUrl);
-  return saved || (Constants.expoConfig?.extra?.serverUrl as string) || 'https://manhunt-server-r2g1.onrender.com';
+  return saved || defaultServerUrl();
 }
-export const saveServerUrl = (url: string) => AsyncStorage.setItem(KEYS.serverUrl, url.trim().replace(/\/+$/, ''));
+export const defaultServerUrl = () => cleanServerUrl((Constants.expoConfig?.extra?.serverUrl as string) || DEFAULT_SERVER_URL);
+export const cleanServerUrl = (url: string) => {
+  const u = url.trim().replace(/\/+$/, '');
+  return /^https?:\/\//i.test(u) ? u : `https://${u}`;
+};
+export const saveServerUrl = (url: string) => AsyncStorage.setItem(KEYS.serverUrl, cleanServerUrl(url));
+
+// Camera behind the main menu. Turning it off saves battery.
+export const loadCameraBackground = async () => (await AsyncStorage.getItem(KEYS.cameraBackground)) !== '0';
+export const saveCameraBackground = (on: boolean) => AsyncStorage.setItem(KEYS.cameraBackground, on ? '1' : '0');
 
 export const loadSession = () => getJson<Session>(KEYS.session);
 export const saveSession = (s: Session) => setJson(KEYS.session, s);

@@ -7,6 +7,7 @@ import type { Ack, GameSettings, Position, Profile, RoomState, TagRequest } from
 import { clearSession, loadIdentity, loadServerUrl, loadSession, saveSession, type Identity } from '../storage';
 import { startBackgroundTracking, stopBackgroundTracking } from '../location';
 import { getPushToken, notifyIfBackground } from '../notifications';
+import { createLocationFilter } from '../locationFilter';
 
 export type Toast = { id: number; kind: 'info' | 'warn' | 'ok'; message: string };
 export type MyLocation = { lat: number; lng: number; accuracy: number | null };
@@ -147,15 +148,17 @@ export function GameProvider({ profile, serverUrl, onServerUrl, children }: { pr
     if (!inGame) return;
     let sub: Location.LocationSubscription | null = null;
     let stopped = false;
+    const filter = createLocationFilter();
     (async () => {
       const { status } = await Location.getForegroundPermissionsAsync();
       if (status !== 'granted' || stopped) return;
       sub = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.High, timeInterval: live ? 2000 : 5000, distanceInterval: live ? 3 : 8 },
         (loc) => {
-          const fix = { lat: loc.coords.latitude, lng: loc.coords.longitude, accuracy: loc.coords.accuracy ?? null };
-          setMyLocation(fix);
-          socketRef.current?.emit('location', { ...fix, at: loc.timestamp }, () => {});
+          const fix = filter({ lat: loc.coords.latitude, lng: loc.coords.longitude, accuracy: loc.coords.accuracy ?? null, at: loc.timestamp });
+          if (!fix) return; // GPS glitch, skip it
+          setMyLocation({ lat: fix.lat, lng: fix.lng, accuracy: fix.accuracy });
+          socketRef.current?.emit('location', fix, () => {});
         },
       );
       if (stopped) sub.remove();

@@ -1,4 +1,5 @@
-export type Avatar = { emoji: string; color: string; accessory: string };
+// photo is a small JPEG data URI; when set it replaces the emoji face
+export type Avatar = { emoji: string; color: string; accessory: string; photo?: string };
 
 export type Profile = { name: string; avatar: Avatar };
 

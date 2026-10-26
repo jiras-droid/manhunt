@@ -165,7 +165,7 @@ export function LobbyScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#ADD8E6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 16 },
   title: { fontSize: 30, fontWeight: '900', color: '#000' },
   codeCard: { margin: 16, marginBottom: 10, backgroundColor: '#fff', borderRadius: 20, padding: 16, alignItems: 'stretch' },
   codeLabel: { textAlign: 'center', fontWeight: '700', color: '#555' },

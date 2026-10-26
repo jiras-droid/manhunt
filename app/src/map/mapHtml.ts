@@ -4,6 +4,15 @@
 
 export const MAPLIBRE_VERSION = '4.7.1';
 
+const z = (...stops: (number | string)[]) => ['interpolate', ['linear'], ['zoom'], ...stops];
+const roadClasses = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service'];
+const roadWidth = (scale: number) => [
+  'interpolate', ['exponential', 1.6], ['zoom'],
+  10, ['*', scale, ['match', ['get', 'class'], ['motorway', 'trunk'], 2.5, ['primary', 'secondary'], 1.8, 0.8]],
+  14, ['*', scale, ['match', ['get', 'class'], ['motorway', 'trunk'], 9, ['primary', 'secondary'], 7, 'service', 3, 5]],
+  18, ['*', scale, ['match', ['get', 'class'], ['motorway', 'trunk'], 40, ['primary', 'secondary'], 32, 'service', 14, 24]],
+];
+
 export const mapStyle = {
   version: 8,
   glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
@@ -11,37 +20,24 @@ export const mapStyle = {
     omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
   },
   layers: [
-    { id: 'land', type: 'background', paint: { 'background-color': '#ECE9E1' } },
+    // warm off-white land that gets a touch lighter as you zoom in
+    { id: 'land', type: 'background', paint: { 'background-color': z(10, '#E4E1D8', 16, '#EFECE5', 18, '#F3F1EC') } },
     {
       id: 'landuse-soft',
       type: 'fill',
       source: 'omt',
       'source-layer': 'landuse',
       filter: ['in', ['get', 'class'], ['literal', ['residential', 'suburb', 'neighbourhood', 'commercial', 'retail', 'industrial']]],
-      paint: { 'fill-color': '#E3DFD5', 'fill-opacity': 0.7 },
+      paint: { 'fill-color': '#E6E2D9', 'fill-opacity': z(12, 0.9, 16, 0.5) },
     },
+    { id: 'sand', type: 'fill', source: 'omt', 'source-layer': 'landcover', filter: ['==', ['get', 'class'], 'sand'], paint: { 'fill-color': '#EEDFB4' } },
     {
-      id: 'parks',
-      type: 'fill',
-      source: 'omt',
-      'source-layer': 'park',
-      paint: { 'fill-color': '#5CBF60' },
-    },
-    {
-      id: 'green-landcover',
+      id: 'grass',
       type: 'fill',
       source: 'omt',
       'source-layer': 'landcover',
       filter: ['in', ['get', 'class'], ['literal', ['grass', 'farmland', 'wetland']]],
-      paint: { 'fill-color': '#6CCB6A' },
-    },
-    {
-      id: 'woods',
-      type: 'fill',
-      source: 'omt',
-      'source-layer': 'landcover',
-      filter: ['==', ['get', 'class'], 'wood'],
-      paint: { 'fill-color': '#3E9E4D' },
+      paint: { 'fill-color': z(10, '#A6DA8E', 16, '#92D47C'), 'fill-antialias': true },
     },
     {
       id: 'green-landuse',
@@ -49,16 +45,43 @@ export const mapStyle = {
       source: 'omt',
       'source-layer': 'landuse',
       filter: ['in', ['get', 'class'], ['literal', ['park', 'pitch', 'playground', 'garden', 'cemetery', 'grass', 'recreation_ground', 'golf_course', 'stadium']]],
-      paint: { 'fill-color': '#5CBF60' },
+      paint: { 'fill-color': z(10, '#86CF78', 16, '#74C66A') },
     },
-    { id: 'sand', type: 'fill', source: 'omt', 'source-layer': 'landcover', filter: ['==', ['get', 'class'], 'sand'], paint: { 'fill-color': '#EBDDB0' } },
-    { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#5FB4EA' } },
+    { id: 'parks', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-color': z(10, '#86CF78', 16, '#6CC163') } },
+    {
+      id: 'parks-edge',
+      type: 'line',
+      source: 'omt',
+      'source-layer': 'park',
+      minzoom: 13,
+      paint: { 'line-color': '#4E9F4C', 'line-width': z(13, 0.5, 18, 2), 'line-opacity': z(13, 0, 15, 0.8) },
+    },
+    { id: 'woods', type: 'fill', source: 'omt', 'source-layer': 'landcover', filter: ['==', ['get', 'class'], 'wood'], paint: { 'fill-color': z(10, '#5DB05F', 16, '#4FA555') } },
+    { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': z(10, '#6CB9EC', 16, '#58AEEA') } },
+    {
+      id: 'water-edge',
+      type: 'line',
+      source: 'omt',
+      'source-layer': 'water',
+      minzoom: 13,
+      paint: { 'line-color': '#3F94D1', 'line-width': z(13, 0.5, 18, 2) },
+    },
     {
       id: 'waterway',
       type: 'line',
       source: 'omt',
       'source-layer': 'waterway',
-      paint: { 'line-color': '#5FB4EA', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 16, 4] },
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#58AEEA', 'line-width': z(10, 1, 16, 4, 18, 8) },
+    },
+    // soft drop shadow under buildings, then the buildings fading in as you zoom
+    {
+      id: 'building-shadow',
+      type: 'fill',
+      source: 'omt',
+      'source-layer': 'building',
+      minzoom: 15,
+      paint: { 'fill-color': '#000000', 'fill-opacity': z(15, 0, 16.5, 0.14), 'fill-translate': [2, 2] },
     },
     {
       id: 'buildings',
@@ -66,7 +89,7 @@ export const mapStyle = {
       source: 'omt',
       'source-layer': 'building',
       minzoom: 13,
-      paint: { 'fill-color': '#9C9C9C', 'fill-outline-color': '#7A7A7A' },
+      paint: { 'fill-color': z(13, '#C2C0BB', 16, '#A9A8A5', 18, '#9E9D9A'), 'fill-opacity': z(13, 0, 14.5, 1), 'fill-outline-color': '#84837F' },
     },
     {
       id: 'paths',
@@ -75,7 +98,7 @@ export const mapStyle = {
       'source-layer': 'transportation',
       filter: ['in', ['get', 'class'], ['literal', ['path', 'track']]],
       minzoom: 14,
-      paint: { 'line-color': '#3A3A3A', 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 1, 18, 3], 'line-dasharray': [2, 1.5] },
+      paint: { 'line-color': '#6E6556', 'line-width': z(14, 1, 18, 3), 'line-dasharray': [2, 1.5], 'line-opacity': z(14, 0, 15, 1) },
     },
     {
       id: 'rail',
@@ -83,24 +106,27 @@ export const mapStyle = {
       source: 'omt',
       'source-layer': 'transportation',
       filter: ['==', ['get', 'class'], 'rail'],
-      paint: { 'line-color': '#7B7B7B', 'line-width': 2, 'line-dasharray': [3, 2] },
+      paint: { 'line-color': '#8A8A8A', 'line-width': z(12, 1, 18, 3), 'line-dasharray': [3, 2] },
+    },
+    // roads: a soft dark edge, the black road, then a dashed white center line
+    {
+      id: 'road-edge',
+      type: 'line',
+      source: 'omt',
+      'source-layer': 'transportation',
+      filter: ['in', ['get', 'class'], ['literal', roadClasses]],
+      minzoom: 13,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#000000', 'line-width': roadWidth(1.35), 'line-opacity': 0.18, 'line-blur': 2 },
     },
     {
       id: 'roads',
       type: 'line',
       source: 'omt',
       'source-layer': 'transportation',
-      filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]],
+      filter: ['in', ['get', 'class'], ['literal', roadClasses]],
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-color': '#111111',
-        'line-width': [
-          'interpolate', ['exponential', 1.6], ['zoom'],
-          10, ['match', ['get', 'class'], ['motorway', 'trunk'], 2.5, ['primary', 'secondary'], 1.8, 0.8],
-          14, ['match', ['get', 'class'], ['motorway', 'trunk'], 9, ['primary', 'secondary'], 7, 'service', 3, 5],
-          18, ['match', ['get', 'class'], ['motorway', 'trunk'], 40, ['primary', 'secondary'], 32, 'service', 14, 24],
-        ],
-      },
+      paint: { 'line-color': z(10, '#4A4A4A', 13, '#262626', 15, '#151515'), 'line-width': roadWidth(1) },
     },
     {
       id: 'road-center-line',
@@ -112,7 +138,8 @@ export const mapStyle = {
       layout: { 'line-cap': 'butt', 'line-join': 'round' },
       paint: {
         'line-color': '#FFFFFF',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.8, 18, 2],
+        'line-width': z(14, 0.8, 18, 2),
+        'line-opacity': z(13.5, 0, 14.5, 0.95),
         'line-dasharray': [4, 3],
       },
     },
@@ -126,18 +153,18 @@ export const mapStyle = {
         'symbol-placement': 'line',
         'text-field': ['coalesce', ['get', 'name:latin'], ['get', 'name']],
         'text-font': ['Noto Sans Bold'],
-        'text-size': 11,
-        'text-offset': [0, 1.2],
+        'text-size': z(15, 10, 18, 13),
+        'text-offset': [0, 1.3],
       },
-      paint: { 'text-color': '#111111', 'text-halo-color': '#FFFFFF', 'text-halo-width': 1.5 },
+      paint: { 'text-color': '#1A1A1A', 'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 1.5 },
     },
     {
       id: 'places',
       type: 'symbol',
       source: 'omt',
       'source-layer': 'place',
-      layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': ['interpolate', ['linear'], ['zoom'], 10, 11, 15, 15] },
-      paint: { 'text-color': '#222222', 'text-halo-color': '#FFFFFF', 'text-halo-width': 2 },
+      layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': z(10, 11, 15, 15) },
+      paint: { 'text-color': '#2A2A2A', 'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 2 },
     },
   ],
 };
@@ -162,6 +189,8 @@ export function buildMapHtml(maplibreSrc = `https://unpkg.com/maplibre-gl@${MAPL
   .pin .label { margin-top: 2px; background: rgba(0,0,0,.8); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 8px; white-space: nowrap; }
   .me { width: 20px; height: 20px; border-radius: 50%; background: #1E88E5; border: 3px solid #fff; box-shadow: 0 0 0 0 rgba(30,136,229,.6); animation: pulse 2s infinite; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(30,136,229,.6); } 70% { box-shadow: 0 0 0 16px rgba(30,136,229,0); } 100% { box-shadow: 0 0 0 0 rgba(30,136,229,0); } }
+  body.static .maplibregl-ctrl-attrib { display: none; }
+  .maplibregl-ctrl-attrib.maplibregl-compact { background: rgba(255,255,255,.7); }
   #err { position: absolute; top: 40%; left: 10%; right: 10%; text-align: center; color: #333; display: none; }
 </style>
 </head><body>
@@ -184,8 +213,15 @@ export function buildMapHtml(maplibreSrc = `https://unpkg.com/maplibre-gl@${MAPL
   });
   map.touchZoomRotate.disableRotation();
   window.__map = map;
+  // keep the map credits folded into the small (i) button instead of a line of links
+  function collapseAttribution() {
+    var el = document.querySelector('.maplibregl-ctrl-attrib');
+    if (el) el.classList.remove('maplibregl-compact-show');
+  }
+  map.on('load', collapseAttribution);
+  map.on('idle', function once() { collapseAttribution(); map.off('idle', once); });
 
-  var area = null, markers = {}, meMarker = null, drawing = false, path = [];
+  var area = null, photos = {}, markers = {}, meMarker = null, drawing = false, path = [];
   var empty = { type: 'FeatureCollection', features: [] };
 
   function polygonFeature(ring) {
@@ -208,9 +244,10 @@ export function buildMapHtml(maplibreSrc = `https://unpkg.com/maplibre-gl@${MAPL
     map.addSource('mask', { type: 'geojson', data: empty });
     map.addSource('area', { type: 'geojson', data: empty });
     map.addSource('sketch', { type: 'geojson', data: empty });
-    map.addLayer({ id: 'mask', type: 'fill', source: 'mask', paint: { 'fill-color': '#000', 'fill-opacity': 0.35 } });
-    map.addLayer({ id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#FF3B30', 'fill-opacity': 0.12 } });
-    map.addLayer({ id: 'area-line', type: 'line', source: 'area', paint: { 'line-color': '#FF3B30', 'line-width': 4 } });
+    map.addLayer({ id: 'mask', type: 'fill', source: 'mask', paint: { 'fill-color': '#1B1B1B', 'fill-opacity': 0.3 } });
+    map.addLayer({ id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#FF3B30', 'fill-opacity': 0.06 } });
+    map.addLayer({ id: 'area-halo', type: 'line', source: 'area', layout: { 'line-join': 'round' }, paint: { 'line-color': '#FFFFFF', 'line-width': 8, 'line-opacity': 0.8, 'line-blur': 2 } });
+    map.addLayer({ id: 'area-line', type: 'line', source: 'area', layout: { 'line-join': 'round' }, paint: { 'line-color': '#FF3B30', 'line-width': 4 } });
     map.addLayer({ id: 'sketch', type: 'line', source: 'sketch', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#FF3B30', 'line-width': 4, 'line-dasharray': [1, 1] } });
     renderArea();
     send({ type: 'ready' });
@@ -262,7 +299,9 @@ export function buildMapHtml(maplibreSrc = `https://unpkg.com/maplibre-gl@${MAPL
     var bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.style.background = p.color || '#3b82f6';
-    bubble.textContent = p.emoji || '🙂';
+    var photo = p.hasPhoto && photos[p.id];
+    if (photo) { bubble.style.backgroundImage = 'url(' + photo + ')'; bubble.style.backgroundSize = 'cover'; bubble.style.backgroundPosition = 'center'; }
+    else bubble.textContent = p.emoji || '🙂';
     var label = document.createElement('div');
     label.className = 'label';
     label.textContent = p.label || '';
@@ -283,11 +322,12 @@ export function buildMapHtml(maplibreSrc = `https://unpkg.com/maplibre-gl@${MAPL
       if (!meMarker) { var el = document.createElement('div'); el.className = 'me'; meMarker = new maplibregl.Marker({ element: el }).setLngLat([m.lng, m.lat]).addTo(map); }
       else meMarker.setLngLat([m.lng, m.lat]);
     },
+    setPhotos: function (m) { photos = m.photos || {}; },
     setPlayers: function (m) {
       var seen = {};
       (m.players || []).forEach(function (p) {
         seen[p.id] = true;
-        var key = p.id + '|' + p.role + '|' + p.kind + '|' + p.emoji + '|' + p.color + '|' + p.label;
+        var key = p.id + '|' + p.role + '|' + p.kind + '|' + p.emoji + '|' + p.color + '|' + p.label + '|' + (p.hasPhoto && photos[p.id] ? photos[p.id].length : 0);
         var existing = markers[p.id];
         if (existing && existing.key === key) { existing.marker.setLngLat([p.lng, p.lat]); return; }
         if (existing) existing.marker.remove();
@@ -298,6 +338,7 @@ export function buildMapHtml(maplibreSrc = `https://unpkg.com/maplibre-gl@${MAPL
     setInteractive: function (m) {
       ['dragPan', 'scrollZoom', 'boxZoom', 'doubleClickZoom', 'touchZoomRotate', 'keyboard'].forEach(function (h) { m.on ? map[h].enable() : map[h].disable(); });
       if (m.on) map.touchZoomRotate.disableRotation();
+      document.body.classList.toggle('static', !m.on);
     },
   };
 

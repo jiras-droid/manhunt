@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GameProvider, useGame } from './game/GameContext';
 import { Toasts } from './components/Toasts';
 import { setupNotificationChannel } from './notifications';
-import { loadProfile, loadServerUrl, markPermissionsAsked, permissionsAsked, saveProfile, saveServerUrl } from './storage';
+import { loadProfile, loadServerUrl, markPermissionsAsked, permissionsAsked, saveProfile, saveServerUrl, cleanServerUrl } from './storage';
 import type { Profile } from './types';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { PermissionsScreen } from './screens/PermissionsScreen';
@@ -34,7 +34,7 @@ export default function App() {
 
   const changeServer = useCallback((url: string) => {
     saveServerUrl(url);
-    setServerUrl(url);
+    setServerUrl(cleanServerUrl(url));
   }, []);
 
   let content: React.ReactNode;

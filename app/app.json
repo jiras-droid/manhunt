@@ -54,6 +54,14 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Manhunt lets you pick a profile photo.",
+          "cameraPermission": "Manhunt shows your camera behind the menu and lets you take a profile photo.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Manhunt shares your location with the game while you play, even when the app is in the background.",

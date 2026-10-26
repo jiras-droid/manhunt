@@ -146,7 +146,7 @@ export function CreateGameScreen({ onBack }: { onBack: () => void }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F2F2F2' },
   mapWrap: { height: '50%', backgroundColor: '#ECE9E1' },
-  mapTop: { position: 'absolute', left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  mapTop: { position: 'absolute', left: 12, right: 64, flexDirection: 'row', alignItems: 'center', gap: 10 },
   hint: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
   hintText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   mapTools: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', gap: 8 },

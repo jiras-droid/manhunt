@@ -10,6 +10,7 @@ export type MapPin = {
   lng: number;
   emoji: string;
   color: string;
+  photo?: string | undefined;
   role: 'hider' | 'seeker' | 'out' | 'none';
   kind: 'live' | 'ping';
   label: string;
@@ -67,7 +68,11 @@ export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap(
     post({ type: 'setArea', area, mask: showMask, fit });
   }, [ready, post, area, showMask, fitToArea]);
   useEffect(() => post({ type: 'setMe', lat: me?.lat, lng: me?.lng }), [post, me?.lat, me?.lng]);
-  useEffect(() => post({ type: 'setPlayers', players: pins || [] }), [post, pins]);
+  // Photos are big, so they're sent once and pins only refer to them by player id.
+  const photoKey = (pins || []).map((p) => `${p.id}:${p.photo?.length ?? 0}`).join(',');
+  const photos = useMemo(() => Object.fromEntries((pins || []).filter((p) => p.photo).map((p) => [p.id, p.photo])), [photoKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => post({ type: 'setPhotos', photos }), [post, photos]);
+  useEffect(() => post({ type: 'setPlayers', players: (pins || []).map(({ photo, ...rest }) => ({ ...rest, hasPhoto: !!photo })) }), [post, pins]);
   useEffect(() => {
     if (!ready || centered.current || !initialCenter || (fitToArea && area)) return;
     centered.current = true;

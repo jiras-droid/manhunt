@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import type { Avatar } from '../types';
 
@@ -21,7 +21,11 @@ export function AvatarView({ avatar, size = 56, ring }: { avatar: Avatar; size?:
           { width: size, height: size, borderRadius: size / 2, backgroundColor: avatar.color, borderWidth: ring ? Math.max(2, size / 18) : 2, borderColor: ring || '#ffffff' },
         ]}
       >
-        <Text style={{ fontSize: size * 0.52 }}>{avatar.emoji}</Text>
+        {avatar.photo ? (
+          <Image source={{ uri: avatar.photo }} style={{ width: '100%', height: '100%', borderRadius: size / 2 }} />
+        ) : (
+          <Text style={{ fontSize: size * 0.52 }}>{avatar.emoji}</Text>
+        )}
       </View>
       {avatar.accessory ? <Text style={[styles.accessory, { fontSize: size * 0.34, top: -size * 0.12, right: -size * 0.08 }]}>{avatar.accessory}</Text> : null}
     </View>
@@ -29,6 +33,6 @@ export function AvatarView({ avatar, size = 56, ring }: { avatar: Avatar; size?:
 }
 
 const styles = StyleSheet.create({
-  circle: { alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
+  circle: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
   accessory: { position: 'absolute' },
 });

@@ -28,10 +28,10 @@ export function GameScreen() {
   const pins = useMemo<MapPin[]>(
     () =>
       positions
-        .map((pos) => {
+        .map((pos): MapPin | null => {
           const p = byId.get(pos.id);
           if (!p) return null;
-          return { id: p.id, lat: pos.lat, lng: pos.lng, emoji: p.avatar.emoji, color: p.avatar.color, role: p.role, kind: pos.kind, label: pos.kind === 'ping' ? `${p.name} 📡` : p.name };
+          return { id: p.id, lat: pos.lat, lng: pos.lng, emoji: p.avatar.emoji, color: p.avatar.color, photo: p.avatar.photo, role: p.role, kind: pos.kind, label: pos.kind === 'ping' ? `${p.name} 📡` : p.name };
         })
         .filter((x): x is MapPin => !!x),
     [positions, byId],
@@ -79,11 +79,11 @@ export function GameScreen() {
           <View style={[styles.role, { backgroundColor: ROLE_STYLE[role].color }]}>
             <Text style={styles.roleText}>{ROLE_STYLE[role].label}</Text>
           </View>
+          <LeaveButton onLeave={leaveRoom} />
           <View style={styles.stats}>
             {timeLeft !== null ? <Text style={styles.stat}>⏱ {formatClock(timeLeft)}</Text> : <Text style={styles.stat}>⏱ no limit</Text>}
             <Text style={styles.stat}>🙈 {hidersLeft} hiding</Text>
           </View>
-          <LeaveButton onLeave={leaveRoom} />
         </View>
         {s.pingMode === 'live' && room.state === 'playing' ? <Text style={styles.sub}>📡 Hider locations are live</Text> : null}
         {nextPing !== null ? <Text style={styles.sub}>📡 Next ping in {formatClock(nextPing)}</Text> : null}
@@ -197,12 +197,12 @@ export function GameScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#ECE9E1' },
   top: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: 12, gap: 6 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   role: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, borderWidth: 2, borderColor: 'rgba(0,0,0,0.3)' },
   roleText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
-  stats: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6 },
+  stats: { backgroundColor: 'rgba(0,0,0,0.85)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6 },
   stat: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  sub: { alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.75)', color: '#fff', fontWeight: '700', fontSize: 13, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, overflow: 'hidden' },
+  sub: { alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.75)', color: '#fff', fontWeight: '700', fontSize: 13, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, overflow: 'hidden' },
   banners: { position: 'absolute', left: 12, right: 12, gap: 8 },
   banner: { color: '#fff', fontWeight: '800', fontSize: 15, padding: 12, borderRadius: 14, overflow: 'hidden', textAlign: 'center' },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
@@ -7,6 +7,7 @@ import { AvatarView } from '../components/AvatarView';
 import { BlackButton, IconButton } from '../components/ui';
 import { useGame } from '../game/GameContext';
 import type { Profile } from '../types';
+import { defaultServerUrl, loadCameraBackground, saveCameraBackground } from '../storage';
 
 export function HomeScreen({ profile, onCreateGame, onEditProfile }: { profile: Profile; onCreateGame: () => void; onEditProfile: () => void }) {
   const insets = useSafeAreaInsets();
@@ -18,6 +19,17 @@ export function HomeScreen({ profile, onCreateGame, onEditProfile }: { profile: 
   const [joining, setJoining] = useState(false);
   const [serverOpen, setServerOpen] = useState(false);
   const [serverDraft, setServerDraft] = useState(serverUrl);
+  const [cameraOn, setCameraOn] = useState(true);
+
+  useEffect(() => {
+    loadCameraBackground().then(setCameraOn);
+  }, []);
+
+  const toggleCamera = (on: boolean) => {
+    setCameraOn(on);
+    saveCameraBackground(on);
+  };
+  const showCamera = cameraOn && !!camPerm?.granted;
 
   const join = async () => {
     setJoining(true);
@@ -28,9 +40,13 @@ export function HomeScreen({ profile, onCreateGame, onEditProfile }: { profile: 
 
   return (
     <View style={styles.root}>
-      {camPerm?.granted ? <CameraView style={StyleSheet.absoluteFill} facing={facing} /> : null}
+      {showCamera ? <CameraView style={StyleSheet.absoluteFill} facing={facing} /> : null}
 
-      <KeyboardAvoidingView style={[styles.overlay, { paddingTop: insets.top + 24 }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={[styles.overlay, { paddingTop: insets.top + 12 }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.status}>
+          <View style={[styles.dot, { backgroundColor: connected ? '#2ECC71' : '#E74C3C' }]} />
+          <Text style={styles.statusText}>{connected ? 'Online' : 'Offline'}</Text>
+        </View>
         <Text style={styles.logo}>MANHUNT</Text>
         <BlackButton title="Create Game" onPress={onCreateGame} style={styles.menuBtn} />
         <BlackButton title="Join Lobby" onPress={() => setJoinOpen((o) => !o)} style={styles.menuBtn} />
@@ -65,10 +81,10 @@ export function HomeScreen({ profile, onCreateGame, onEditProfile }: { profile: 
             </View>
           </Pressable>
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            {camPerm?.granted ? <IconButton icon="🔄" label="Flip camera" onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))} /> : null}
+            {showCamera ? <IconButton icon="🔄" label="Flip camera" onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))} /> : null}
             <IconButton
               icon="⚙️"
-              label="Server settings"
+              label="Settings"
               onPress={() => {
                 setServerDraft(serverUrl);
                 setServerOpen(true);
@@ -76,18 +92,26 @@ export function HomeScreen({ profile, onCreateGame, onEditProfile }: { profile: 
             />
           </View>
         </View>
-        <View style={[styles.status, { top: insets.top + 6 }]}>
-          <View style={[styles.dot, { backgroundColor: connected ? '#2ECC71' : '#E74C3C' }]} />
-          <Text style={styles.statusText}>{connected ? 'Online' : 'Offline'}</Text>
-        </View>
       </KeyboardAvoidingView>
 
       <Modal visible={serverOpen} transparent animationType="fade" onRequestClose={() => setServerOpen(false)}>
         <View style={styles.modalBg}>
           <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Game server</Text>
-            <Text style={styles.modalHint}>Everyone in a game must use the same server address. The server window on the PC shows it.</Text>
+            <Text style={styles.modalTitle}>Settings</Text>
+            <View style={styles.settingRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingTitle}>Camera background</Text>
+                <Text style={styles.modalHint}>Turn off to save battery. The menu turns light blue.</Text>
+              </View>
+              <Switch value={cameraOn} onValueChange={toggleCamera} trackColor={{ true: '#000', false: '#ccc' }} />
+            </View>
+            {cameraOn && !camPerm?.granted ? <Text style={styles.modalHint}>Camera permission is off, so the menu stays light blue.</Text> : null}
+            <Text style={[styles.settingTitle, { marginTop: 18 }]}>Game server</Text>
+            <Text style={styles.modalHint}>Everyone in a game must use the same server address.</Text>
             <TextInput style={styles.serverInput} value={serverDraft} onChangeText={setServerDraft} autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="http://192.168.1.20:3000" />
+            <Pressable onPress={() => setServerDraft(defaultServerUrl())} style={styles.reset}>
+              <Text style={styles.resetText}>↺ Reset to default server</Text>
+            </Pressable>
             <Text style={styles.modalHint}>{connected ? '🟢 Connected to the current server' : '🔴 Not connected to the current server'}</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
               <BlackButton title="Cancel" small onPress={() => setServerOpen(false)} style={{ flex: 1, backgroundColor: '#333' }} />
@@ -120,7 +144,11 @@ const styles = StyleSheet.create({
   profile: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(0,0,0,0.75)', paddingVertical: 8, paddingLeft: 8, paddingRight: 16, borderRadius: 30, borderWidth: 2, borderColor: '#3A3A3A' },
   profileName: { color: '#fff', fontWeight: '800', fontSize: 16 },
   profileEdit: { color: '#bbb', fontSize: 12 },
-  status: { position: 'absolute', right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14 },
+  settingTitle: { fontSize: 16, fontWeight: '800', color: '#000' },
+  reset: { alignSelf: 'flex-start', marginTop: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#EEE' },
+  resetText: { fontWeight: '800', color: '#000' },
+  status: { alignSelf: 'center', marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   statusText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },

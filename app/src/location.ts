@@ -2,15 +2,20 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 import { loadSession } from './storage';
+import { createLocationFilter } from './locationFilter';
 
 export const LOCATION_TASK = 'manhunt-background-location';
+const filter = createLocationFilter();
 
 // Runs even when the app is in the background: posts the newest fix to the server.
 TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
   if (error || !data) return;
   const { locations } = data as { locations: Location.LocationObject[] };
-  const loc = locations?.[locations.length - 1];
-  if (!loc) return;
+  let fix = null;
+  for (const loc of locations || []) {
+    fix = filter({ lat: loc.coords.latitude, lng: loc.coords.longitude, accuracy: loc.coords.accuracy ?? null, at: loc.timestamp }) ?? fix;
+  }
+  if (!fix) return;
   const session = await loadSession();
   if (!session) return;
   try {
@@ -21,10 +26,10 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
         code: session.code,
         playerId: session.playerId,
         secret: session.secret,
-        lat: loc.coords.latitude,
-        lng: loc.coords.longitude,
-        accuracy: loc.coords.accuracy,
-        at: loc.timestamp,
+        lat: fix.lat,
+        lng: fix.lng,
+        accuracy: fix.accuracy,
+        at: fix.at,
       }),
     });
     const body = await res.json().catch(() => null);

@@ -65,6 +65,8 @@ function sanitizeAvatar(a = {}) {
     emoji: typeof a.emoji === 'string' ? a.emoji.slice(0, 8) : '🙂',
     color: typeof a.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(a.color) ? a.color : '#3b82f6',
     accessory: typeof a.accessory === 'string' ? a.accessory.slice(0, 8) : '',
+    // small JPEG profile photo (data URI), capped so lobbies stay light
+    photo: typeof a.photo === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(a.photo) && a.photo.length <= 60000 ? a.photo : undefined,
   };
 }
 
@@ -279,7 +281,9 @@ class Room {
 
     if (this.area && (this.state === 'headstart' || this.state === 'playing') && p.role !== 'out') {
       const inside = pointInPolygon(lng, lat, this.area);
-      if (!inside && !p.outOfBoundsSince) {
+      // a blurry GPS fix can't start the out-of-bounds countdown
+      const reliable = !p.accuracy || p.accuracy <= 75;
+      if (!inside && reliable && !p.outOfBoundsSince) {
         p.outOfBoundsSince = Date.now();
         this.out.toPlayer(p.id, 'toast', { kind: 'warn', message: `You're out of bounds! Get back within ${this.settings.outOfBoundsSec}s.` });
         this.out.push(p, '⚠️ Out of bounds', `Get back inside the play area within ${this.settings.outOfBoundsSec} seconds or you lose.`, { type: 'oob', code: this.code });
