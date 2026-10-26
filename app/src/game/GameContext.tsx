@@ -151,7 +151,7 @@ export function GameProvider({ profile, serverUrl, onServerUrl, children }: { pr
       const { status } = await Location.getForegroundPermissionsAsync();
       if (status !== 'granted' || stopped) return;
       sub = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.High, timeInterval: live ? 2000 : 5000, distanceInterval: 2 },
+        { accuracy: Location.Accuracy.High, timeInterval: live ? 2000 : 5000, distanceInterval: live ? 3 : 8 },
         (loc) => {
           const fix = { lat: loc.coords.latitude, lng: loc.coords.longitude, accuracy: loc.coords.accuracy ?? null };
           setMyLocation(fix);

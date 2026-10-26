@@ -63,6 +63,7 @@ function attach(socket, room, player) {
   socket.data.playerId = player.id;
   socket.join(room.code);
   player.connected = true;
+  player.lastPositionsSig = null; // make sure the fresh connection gets positions
   room.broadcast();
   room.broadcastPositions();
   // re-send any tag requests this player still has to answer

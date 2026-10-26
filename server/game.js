@@ -490,7 +490,13 @@ class Room {
 
   broadcastPositions() {
     for (const p of this.players.values()) {
-      if (p.connected) this.out.toPlayer(p.id, 'positions', { players: this.positionsFor(p.id), lastPingAt: this.lastPingAt, serverTime: Date.now() });
+      if (!p.connected) continue;
+      const players = this.positionsFor(p.id);
+      // only send when something changed, to save mobile data
+      const sig = JSON.stringify([players, this.lastPingAt]);
+      if (sig === p.lastPositionsSig) continue;
+      p.lastPositionsSig = sig;
+      this.out.toPlayer(p.id, 'positions', { players, lastPingAt: this.lastPingAt, serverTime: Date.now() });
     }
   }
 }
