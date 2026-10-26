@@ -6,7 +6,7 @@ type NotificationsModule = typeof import('expo-notifications');
 
 // Expo Go (Android) doesn't ship all of expo-notifications' native modules,
 // so importing it there crashes the app. Load it only in real builds.
-const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient || Constants.appOwnership === 'expo';
 let cached: NotificationsModule | null | undefined;
 
 function notifications(): NotificationsModule | null {
